@@ -41,9 +41,9 @@ namespace octet {
 
     void init(int _texture, float x, float y, float w, float h) {
       modelToWorld.loadIdentity();
-      modelToWorld.translate(x, y, 0);
-      halfWidth = w * 0.5f;
-      halfHeight = h * 0.5f;
+      modelToWorld.translate(x*2, y*2, 0);
+      halfWidth = w * 1.0f;
+      halfHeight = h * 1.0f;
       texture = _texture;
       enabled = true;
     }
@@ -54,7 +54,7 @@ namespace octet {
 
       // build a projection matrix: model -> world -> camera -> projection
       // the projection space is the cube -1 <= x/w, y/w, z/w <= 1
-      mat4t modelToProjection = mat4t::build_projection_matrix(modelToWorld, cameraToWorld);
+      mat4t modelToProjection = mat4t::build_projection_matrix(modelToWorld*2, cameraToWorld*2);
 
       // set up opengl to draw textured triangles using sampler 0 (GL_TEXTURE0)
       glActiveTexture(GL_TEXTURE0);
@@ -148,8 +148,8 @@ namespace octet {
       num_sound_sources = 8,
       num_rows = 5,
       num_cols = 10,
-      num_missiles = 2,
-      num_bombs = 2,
+      num_missiles = 5,
+      num_bombs = 3,
       num_borders = 4,
       num_invaderers = num_rows * num_cols,
 
@@ -474,7 +474,7 @@ namespace octet {
       bombs_disabled = 50;
       invader_velocity = 0.01f;
       live_invaderers = num_invaderers;
-      num_lives = 3;
+      num_lives = 5;
       game_over = false;
       score = 0;
     }
@@ -498,6 +498,7 @@ namespace octet {
       move_invaders(invader_velocity, 0);
 
       sprite &border = sprites[first_border_sprite+(invader_velocity < 0 ? 2 : 3)];
+
       if (invaders_collide(border)) {
         invader_velocity = -invader_velocity;
         move_invaders(invader_velocity, -0.1f);
