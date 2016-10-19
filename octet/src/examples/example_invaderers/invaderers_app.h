@@ -41,7 +41,7 @@ namespace octet {
 
     void init(int _texture, float x, float y, float w, float h) {
       modelToWorld.loadIdentity();
-      modelToWorld.translate(x*2, y*2, 0);
+      modelToWorld.translate(x, y, 0);
       halfWidth = w * 1.0f;
       halfHeight = h * 1.0f;
       texture = _texture;
@@ -251,6 +251,19 @@ namespace octet {
           sprites[ship_sprite].translate(-ship_speed, 0);
         }
       }
+	  // up and down arrows
+	  if (is_key_down(key_up)) {
+		  sprites[ship_sprite].translate(0, +ship_speed);
+		  if (sprites[ship_sprite].collides_with(sprites[first_border_sprite + 2])) {
+			  sprites[ship_sprite].translate(0, +ship_speed);
+		  }
+	  }
+	  else if (is_key_down(key_down)) {
+		  sprites[ship_sprite].translate(0, -ship_speed);
+		  if (sprites[ship_sprite].collides_with(sprites[first_border_sprite + 3])) {
+			  sprites[ship_sprite].translate(0, +ship_speed);
+		  }
+	  }
     }
 
     // fire button (space)
@@ -442,10 +455,10 @@ namespace octet {
 
       // set the border to white for clarity
       GLuint white = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
-      sprites[first_border_sprite+0].init(white, 0, -3, 6, 0.2f);
-      sprites[first_border_sprite+1].init(white, 0,  3, 6, 0.2f);
-      sprites[first_border_sprite+2].init(white, -3, 0, 0.2f, 6);
-      sprites[first_border_sprite+3].init(white, 3,  0, 0.2f, 6);
+      sprites[first_border_sprite+0].init(white, 0, -6, 6, 0.2f);
+      sprites[first_border_sprite+1].init(white, 0,  6, 6, 0.2f);
+      sprites[first_border_sprite+2].init(white, -6, 0, 0.2f, 6);
+      sprites[first_border_sprite+3].init(white, 6,  0, 0.2f, 6);
 
       // use the missile texture
       GLuint missile = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/missile.gif");
@@ -474,7 +487,7 @@ namespace octet {
       bombs_disabled = 50;
       invader_velocity = 0.01f;
       live_invaderers = num_invaderers;
-      num_lives = 5;
+      num_lives = 1;
       game_over = false;
       score = 0;
     }
