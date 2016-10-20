@@ -146,8 +146,8 @@ namespace octet {
 
     enum {
       num_sound_sources = 8,
-      num_rows = 5,
-      num_cols = 10,
+      num_rows = 2,
+      num_cols = 3,
       num_missiles = 5,
       num_bombs = 3,
       num_borders = 4,
@@ -184,6 +184,7 @@ namespace octet {
     // game state
     bool game_over;
     int score;
+	int timer=0;
 
     // speed of enemy
     float invader_velocity;
@@ -217,7 +218,7 @@ namespace octet {
       live_invaderers--;
       score++;
       if (live_invaderers == 4) {
-        invader_velocity *= 4;
+        invader_velocity *= 2;
       } else if (live_invaderers == 0) {
         game_over = true;
         sprites[game_over_sprite].translate(-20, 0);
@@ -238,7 +239,7 @@ namespace octet {
 
     // use the keyboard to move the ship
     void move_ship() {
-      const float ship_speed = 0.05f;
+      const float ship_speed = 0.2f;
       // left and right arrows
       if (is_key_down(key_left)) {
         sprites[ship_sprite].translate(-ship_speed, 0);
@@ -485,7 +486,7 @@ namespace octet {
       // sundry counters and game state.
       missiles_disabled = 0;
       bombs_disabled = 50;
-      invader_velocity = 0.01f;
+      invader_velocity = 0.02f;
       live_invaderers = num_invaderers;
       num_lives = 1;
       game_over = false;
@@ -541,9 +542,20 @@ namespace octet {
         sprites[i].render(texture_shader_, cameraToWorld);
       }
 
+	  // time simulation
+	  int frame = get_frame_number();
+	  if (frame % 30 == 0) {
+		  timer++;
+	  }
+
       char score_text[32];
-      sprintf(score_text, "score: %d   lives: %d\n", score, num_lives);
+      sprintf(score_text, "score: %d", score);
       draw_text(texture_shader_, -1.75f, 2, 1.0f/256, score_text);
+
+	  char timer_text[32];
+	  sprintf(timer_text, "time: %d", timer);
+	  draw_text(texture_shader_, -1.75f, 1.8f, 1.0f/256, timer_text);
+
 
       // move the listener with the camera
       vec4 &cpos = cameraToWorld.w();
