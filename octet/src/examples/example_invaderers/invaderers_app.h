@@ -217,12 +217,6 @@ namespace octet {
 
       live_invaderers--;
       score++;
-      if (live_invaderers == 4) {
-        invader_velocity *= 2;
-      } else if (live_invaderers == 0) {
-        game_over = true;
-        sprites[game_over_sprite].translate(-20, 0);
-      }
     }
 
     // called when we are hit
@@ -519,7 +513,7 @@ namespace octet {
 			  for (int i = 0; i != num_cols; ++i) {
 				  assert(first_invaderer_sprite + i + j*num_cols <= last_invaderer_sprite);
 				  sprites[first_invaderer_sprite + i + j*num_cols].init(
-					  invaderer, ((float)i - num_cols * 0.5f) * 0.5f, 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
+					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
 				  );
 			  }
 		  }
