@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////////
 //
 // (C) Andy Thomason 2012-2014
 //
@@ -146,19 +146,20 @@ namespace octet {
 
     enum {
       num_sound_sources = 8,
-      num_rows = 2,
-      num_cols = 2,
+      num_first = 2,
+      num_second = 2,
+	  num_extra = 4,
       num_missiles = 5,
       num_bombs = 3,
       num_borders = 4,
-      num_invaderers = num_rows * num_cols,
+      num_invaderers = num_first * num_second,
 
       // sprite definitions
       ship_sprite = 0,
       game_over_sprite,
 
       first_invaderer_sprite,
-      last_invaderer_sprite = first_invaderer_sprite + num_invaderers - 1,
+      last_invaderer_sprite = first_invaderer_sprite + num_invaderers + num_extra - 1,
 
       first_missile_sprite,
       last_missile_sprite = first_missile_sprite + num_missiles - 1,
@@ -185,6 +186,7 @@ namespace octet {
     bool game_over;
     int score;
 	int timer=0;
+	int refresher = 0;
 
     // speed of enemy
     float invader_velocity;
@@ -196,7 +198,7 @@ namespace octet {
     ALuint sources[num_sound_sources];
 
     // big array of sprites
-    sprite sprites[num_sprites];
+    sprite sprites[num_sprites+num_extra];
 
     // random number generator
     class random randomizer;
@@ -316,7 +318,7 @@ namespace octet {
         sprite &missile = sprites[first_missile_sprite+i];
         if (missile.is_enabled()) {
           missile.translate(0, missile_speed);
-          for (int j = 0; j != num_invaderers; ++j) {
+          for (int j = 0; j != num_invaderers + num_extra; ++j) {
             sprite &invaderer = sprites[first_invaderer_sprite+j];
             if (invaderer.is_enabled() && missile.collides_with(invaderer)) {
               invaderer.is_enabled() = false;
@@ -362,7 +364,7 @@ namespace octet {
 
     // move the array of enemies
     void move_invaders(float dx, float dy) {
-      for (int j = 0; j != num_invaderers; ++j) {
+      for (int j = 0; j != num_invaderers + num_extra; ++j) {
         sprite &invaderer = sprites[first_invaderer_sprite+j];
         if (invaderer.is_enabled()) {
           invaderer.translate(dx, dy);
@@ -372,7 +374,7 @@ namespace octet {
 
     // check if any invaders hit the sides.
     bool invaders_collide(sprite &border) {
-      for (int j = 0; j != num_invaderers; ++j) {
+      for (int j = 0; j != num_invaderers + num_extra; ++j) {
         sprite &invaderer = sprites[first_invaderer_sprite+j];
         if (invaderer.is_enabled() && invaderer.collides_with(border)) {
           return true;
@@ -439,11 +441,11 @@ namespace octet {
       sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f);
 
       GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
-	   for (int j = 0; j != num_rows; ++j) {
-		  for (int i = 0; i != num_cols; ++i) {
-			  assert(first_invaderer_sprite + i + j*num_cols <= last_invaderer_sprite);
-			  sprites[first_invaderer_sprite + i + j*num_cols].init(
-				  invaderer, ((float)i - num_cols * 0.5f) * 0.5f, 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
+	   for (int j = 0; j != num_first; ++j) {
+		  for (int i = 0; i != num_second; ++i) {
+			  assert(first_invaderer_sprite + i + j*num_second <= last_invaderer_sprite);
+			  sprites[first_invaderer_sprite + i + j*num_second].init(
+				  invaderer, ((float)i - num_second * 0.5f) * 0.5f, 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
 			  );
 		  }
       }
@@ -507,17 +509,6 @@ namespace octet {
 
       sprite &border = sprites[first_border_sprite+0];
 
-	  if (invaders_collide(border)) {
-		  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
-		  for (int j = 0; j != num_rows; ++j) {
-			  for (int i = 0; i != num_cols; ++i) {
-				  assert(first_invaderer_sprite + i + j*num_cols <= last_invaderer_sprite);
-				  sprites[first_invaderer_sprite + i + j*num_cols].init(
-					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
-				  );
-			  }
-		  }
-	  }
     }
 
     // this is called to draw the world
@@ -545,9 +536,23 @@ namespace octet {
 
 	  // time simulation
 	  int frame = get_frame_number();
-	  if (frame % 30 == 0) {
+	  if (game_over) { frame = 0; }
+	  if (frame % 30 == 1) {
 		  timer++;
 	  }
+
+	  if (frame % 60 == 1) {
+		  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
+		  for (int j = 0; j != num_invaderers; ++j) {
+			  refresher++;
+			  if (refresher==8) {
+				  refresher = 0;
+			  }
+			  sprites[first_invaderer_sprite + refresher].init(
+			  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
+			  );
+		  }
+      }
 
       char score_text[32];
       sprintf(score_text, "score: %d", score);
