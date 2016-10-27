@@ -150,7 +150,7 @@ namespace octet {
       num_second = 2,
 	  num_extra = 4,
       num_missiles = 5,
-      num_bombs = 3,
+      num_bombs = 6,
       num_borders = 4,
       num_invaderers = num_first * num_second,
 
@@ -372,6 +372,16 @@ namespace octet {
       }
     }
 
+	// check collision with invaders
+	void ship_collide() {
+		for (int i = 0; i != num_invaderers + num_extra; ++i) {
+			sprite &invaderer = sprites[first_invaderer_sprite + i];
+			if (invaderer.is_enabled() && invaderer.collides_with(sprites[ship_sprite])) {
+				on_hit_ship();
+			}
+		}
+	}
+
     // check if any invaders hit the sides.
     bool invaders_collide(sprite &border) {
       for (int j = 0; j != num_invaderers + num_extra; ++j) {
@@ -382,8 +392,7 @@ namespace octet {
       }
       return false;
     }
-
-
+ 
     void draw_text(texture_shader &shader, float x, float y, float scale, const char *text) {
       mat4t modelToWorld;
       modelToWorld.loadIdentity();
@@ -504,6 +513,8 @@ namespace octet {
       move_missiles();
 
       move_bombs();
+
+	  ship_collide();
 
       move_invaders(0, invader_velocity);
 
