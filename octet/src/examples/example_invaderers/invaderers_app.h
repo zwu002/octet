@@ -43,7 +43,7 @@ namespace octet {
       modelToWorld.loadIdentity();
       modelToWorld.translate(x, y, 0);
       halfWidth = w * 1.0f;
-      halfHeight = h * 1.0f;
+      halfHeight = h *1.0f;
       texture = _texture;
       enabled = true;
     }
@@ -146,8 +146,8 @@ namespace octet {
 
     enum {
       num_sound_sources = 8,
-      num_first = 2,
-      num_second = 2,
+      num_first = 4,
+      num_second = 3,
 	  num_extra = 4,
       num_missiles = 5,
       num_bombs = 6,
@@ -313,7 +313,7 @@ namespace octet {
 
     // animate the missiles
     void move_missiles() {
-      const float missile_speed = 0.3f;
+      const float missile_speed = 0.5f;
       for (int i = 0; i != num_missiles; ++i) {
         sprite &missile = sprites[first_missile_sprite+i];
         if (missile.is_enabled()) {
@@ -341,7 +341,7 @@ namespace octet {
 
     // animate the bombs
     void move_bombs() {
-      const float bomb_speed = 0.2f;
+      const float bomb_speed = 0.5f;
       for (int i = 0; i != num_bombs; ++i) {
         sprite &bomb = sprites[first_bomb_sprite+i];
         if (bomb.is_enabled()) {
@@ -502,7 +502,7 @@ namespace octet {
       // sundry counters and game state.
       missiles_disabled = 0;
       bombs_disabled = 50;
-      invader_velocity = -0.1f;
+      invader_velocity = -0.2f;
       live_invaderers = num_invaderers;
       num_lives = 1;
       game_over = false;
@@ -565,9 +565,9 @@ namespace octet {
 
 	  if (frame % 60 == 1) {
 		  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
-		  for (int j = 0; j != num_invaderers; ++j) {
+		  for (int j = 0; j != num_first; ++j) {
 			  refresher++;
-			  if (refresher==8) {
+			  if (refresher==num_invaderers+num_extra) {
 				  refresher = 0;
 			  }
 			  sprites[first_invaderer_sprite + refresher].init(
