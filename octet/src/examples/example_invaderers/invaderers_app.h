@@ -382,6 +382,17 @@ namespace octet {
 		}
 	}
 
+	// check collision between invaders
+	void collider() {
+		for (int i = 0; i != num_invaderers + num_extra; ++i) {
+			sprite &invaderer = sprites[first_invaderer_sprite + i];
+			if (invaderer.is_enabled() && invaderer.collides_with(sprites[first_invaderer_sprite + refresher]) && i != refresher) {
+				invaderer.is_enabled() = false;
+				invaderer.translate(20, 0);
+			}
+		}
+	}
+
     // check if any invaders hit the sides.
     bool invaders_collide(sprite &border) {
       for (int j = 0; j != num_invaderers + num_extra; ++j) {
@@ -444,7 +455,7 @@ namespace octet {
       font_texture = resource_dict::get_texture_handle(GL_RGBA, "assets/big_0.gif");
 
       GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship.gif");
-      sprites[ship_sprite].init(ship, 0, -2.75f, 0.25f, 0.25f);
+      sprites[ship_sprite].init(ship, 0, -2.75f, 0.5f, 0.5f);
 
       GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
       sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f);
@@ -454,7 +465,7 @@ namespace octet {
 		  for (int i = 0; i != num_second; ++i) {
 			  assert(first_invaderer_sprite + i + j*num_second <= last_invaderer_sprite);
 			  sprites[first_invaderer_sprite + i + j*num_second].init(
-				  invaderer, ((float)i - num_second * 0.5f) * 0.5f, 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
+				  invaderer, ((float)i - num_second * 0.5f) * 0.5f, 6.0f - ((float)j * 0.5f), 0.5f, 0.5f
 			  );
 		  }
       }
@@ -560,8 +571,9 @@ namespace octet {
 				  refresher = 0;
 			  }
 			  sprites[first_invaderer_sprite + refresher].init(
-			  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f - ((float)j * 0.5f), 0.25f, 0.25f
+			  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f - ((float)j * 0.5f), 0.5f, 0.5f
 			  );
+			  collider();
 		  }
       }
 
