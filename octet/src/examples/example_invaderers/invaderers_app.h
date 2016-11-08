@@ -156,8 +156,8 @@ namespace octet {
 		void init(int _texture, float x, float y, float w, float h) {
 			modelToWorld.loadIdentity();
 			modelToWorld.translate(x, y, 0);
-			halfWidth = w * 0.5f;
-			halfHeight = h *0.5f;
+			halfWidth = w;
+			halfHeight = h;
 			texture = _texture;
 			enabled = true;
 		}
@@ -180,7 +180,7 @@ namespace octet {
 				-halfWidth,  halfHeight, 0,
 			};
 
-			glVertexAttribPointer(attribute_pos, 5, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)vertices);
+			glVertexAttribPointer(attribute_pos, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)vertices);
 			glEnableVertexAttribArray(attribute_pos);
 
 			static const float uvs[] = {
@@ -190,9 +190,8 @@ namespace octet {
 				0,  1,
 			};
 
-			glVertexAttribPointer(attribute_uv, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)uvs);
+			glVertexAttribPointer(attribute_uv, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)uvs);
 			glEnableVertexAttribArray(attribute_uv);
-
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
 
@@ -203,17 +202,6 @@ namespace octet {
 		void set_relative(sprite_boss &rhs, float x, float y) {
 			modelToWorld = rhs.modelToWorld;
 			modelToWorld.translate(x, y, 0);
-		}
-
-		bool collides_with(const sprite_boss &rhs) const {
-			float dx = rhs.modelToWorld[3][0] - modelToWorld[3][0];
-			float dy = rhs.modelToWorld[3][1] - modelToWorld[3][1];
-
-
-			return
-				(fabsf(dx) < halfWidth + rhs.halfWidth) &&
-				(fabsf(dy) < halfHeight + rhs.halfHeight)
-				;
 		}
 
 		bool is_above(const sprite_boss &rhs, float margin) const {
@@ -237,6 +225,7 @@ namespace octet {
 
     // shader to draw a textured triangle
     texture_shader texture_shader_;
+	boss_shader boss_shader_;
 
     enum {
       num_sound_sources = 8,
@@ -273,7 +262,7 @@ namespace octet {
     int bombs_disabled;
 
     // accounting for bad guys
-    int live_invaderers;
+	int boss_lives = 5;
     int num_lives;
 
     // game state
@@ -312,8 +301,6 @@ namespace octet {
       ALuint source = get_sound_source();
       alSourcei(source, AL_BUFFER, bang);
       alSourcePlay(source);
-
-      live_invaderers--;
       score++;
     }
 
@@ -414,7 +401,7 @@ namespace octet {
         sprite &missile = sprites[first_missile_sprite+i];
         if (missile.is_enabled()) {
           missile.translate(0, missile_speed);
-          for (int j = 0; j != num_invaderers + num_extra; ++j) {
+          for (int j = 0; j != num_invaderers; ++j) {
             sprite &invaderer = sprites[first_invaderer_sprite+j];
             if (invaderer.is_enabled() && missile.collides_with(invaderer)) {
               invaderer.is_enabled() = false;
@@ -460,7 +447,7 @@ namespace octet {
 
     // move the array of enemies
     void move_invaders(float dx, float dy) {
-      for (int j = 0; j != num_invaderers + num_extra; ++j) {
+      for (int j = 0; j != num_invaderers; ++j) {
         sprite &invaderer = sprites[first_invaderer_sprite+j];
         if (invaderer.is_enabled()) {
           invaderer.translate(dx, dy);
@@ -488,6 +475,7 @@ namespace octet {
 			}
 		}
 	}
+
 
     // check if any invaders hit the sides.
     bool invaders_collide(sprite &border) {
@@ -555,17 +543,7 @@ namespace octet {
 
       GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
       sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f);
-
-      GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
-	   for (int j = 0; j != num_first; ++j) {
-		  for (int i = 0; i != num_second; ++i) {
-			  assert(first_invaderer_sprite + i + j*num_second <= last_invaderer_sprite);
-			  sprites[first_invaderer_sprite + i + j*num_second].init(
-				  invaderer, ((float)i - num_second * 0.5f) * 0.5f, 6.0f - ((float)j * 0.5f), 0.5f, 0.5f
-			  );
-		  }
-      }
-
+	  
       // set the border to white for clarity
       GLuint white = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
       sprites[first_border_sprite+0].init(white, 0, -6, 6, 0.2f);
@@ -599,12 +577,18 @@ namespace octet {
       missiles_disabled = 0;
       bombs_disabled = 50;
       invader_velocity = -0.2f;
-      live_invaderers = num_invaderers;
       num_lives = 1;
       game_over = false;
       score = 0;
     }
 
+	void boss_init() {
+        boss_shader_.init();
+		GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
+		sprites[first_invaderer_sprite-1].init(
+			  invaderer, 0, 5.0f, 2.0f, 1.5f
+		  );
+	}
     // called every frame to move things
     void simulate() {
       if (game_over) {
@@ -660,26 +644,24 @@ namespace octet {
 	  }
 
 	  // refresh invaders
-	  if (frame % 60 == 1 && !boss_exist) {
+	  if (frame % 60 == 2 && !boss_exist) {
 		  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
 		  for (int j = 0; j != num_first; ++j) {
 			  refresher++;
-			  if (refresher==num_invaderers+num_extra) {
+			  if (refresher==num_invaderers) {
 				  refresher = 0;
 			  }
 			  sprites[first_invaderer_sprite + refresher].init(
-			  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f - ((float)j * 0.5f), 0.5f, 0.5f
+			  invaderer, (float)randomizer.get(-4.0f, 4.0f), 5.0f, 0.5f, 0.5f
 			  );
 			  collider();
 		  }
       }
 
 	  // draw boss invaders
-	  if (frame % 120 == 1 && !boss_exist) {
-		  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
-		  boss.init(
-			  invaderer, 0, 5.0f, 0.5f, 0.5f
-		  );
+	  if (frame % 300 == 299 && !boss_exist) {
+		  boss_init();
+		  boss_exist = true;
 		  collider();
 	  }
 
