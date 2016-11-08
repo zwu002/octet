@@ -7,6 +7,7 @@
 // Single texture shader with no lighting
 
 namespace octet { namespace shaders {
+  
   class texture_shader : public shader {
     // indices to use with glUniform*()
 
@@ -39,7 +40,7 @@ namespace octet { namespace shaders {
       const char fragment_shader[] = SHADER_STR(
         varying vec2 uv_;
         uniform sampler2D sampler;
-        void main() { gl_FragColor = texture2D(sampler, uv_); }
+		void main() { gl_FragColor = texture2D(sampler, uv_); }
       );
     
       // use the common shader code to compile and link the shaders
@@ -59,5 +60,50 @@ namespace octet { namespace shaders {
       glUniform1i(samplerIndex_, sampler);
       glUniformMatrix4fv(modelToProjectionIndex_, 1, GL_FALSE, modelToProjection.get());
     }
+  };
+
+  class boss_shader : public shader {
+
+	  GLuint modelToProjectionIndex_;
+
+	  GLuint samplerIndex_;
+  public:
+	  void init() {
+		  // this is the vertex shader.
+		  const char vertex_shader[] = SHADER_STR(
+			  varying vec2 uv_;
+
+		      attribute vec4 pos;
+		      attribute vec2 uv;
+
+		      uniform mat4 modelToProjection;
+
+		      void main() { gl_Position = modelToProjection * pos; uv_ = uv; }
+		  );
+
+		  // this is the fragment shader
+		  const char fragment_shader[] = SHADER_STR(
+			  varying vec2 uv_;
+		  uniform sampler2D sampler;
+		  void main() { gl_FragColor = texture2D(sampler, uv_) * vec4(1, 0.2f, 0.2f, 1); }
+		  );
+
+		  // use the common shader code to compile and link the shaders
+		  // the result is a shader program
+		  shader::init(vertex_shader, fragment_shader);
+
+		  // extract the indices of the uniforms to use later
+		  modelToProjectionIndex_ = glGetUniformLocation(program(), "modelToProjection");
+		  samplerIndex_ = glGetUniformLocation(program(), "sampler");
+	  }
+
+	  void render(const mat4t &modelToProjection, int sampler) {
+		  // tell openGL to use the program
+		  shader::render();
+
+		  // customize the program with uniforms
+		  glUniform1i(samplerIndex_, sampler);
+		  glUniformMatrix4fv(modelToProjectionIndex_, 1, GL_FALSE, modelToProjection.get());
+	  }
   };
 }}
