@@ -340,6 +340,7 @@ namespace octet {
 	}
 
     // animate the missiles
+	// check if missles hit invaders or boss
     void move_missiles() {
       const float missile_speed = 0.5f;
       for (int i = 0; i != num_missiles; ++i) {
@@ -354,10 +355,19 @@ namespace octet {
               missile.is_enabled() = false;
               missile.translate(20, 0);
               on_hit_invaderer();
-
               goto next_missile;
             }
           }
+
+		  sprite &boss = sprites[boss_sprite];
+		  if (boss.is_enabled() && missile.collides_with(boss)) {
+			  --boss_lives;
+			  missile.is_enabled() = false;
+			  missile.translate(20, 0);
+			  on_hit_invaderer();
+			  goto next_missile;
+		  }
+
           if (missile.collides_with(sprites[first_border_sprite+1])) {
             missile.is_enabled() = false;
             missile.translate(20, 0);
@@ -574,7 +584,7 @@ namespace octet {
       invader_velocity = -0.2f;
 	  boss_velocity = -0.3f;
       num_lives = 1;
-	  boss_lives = 20;
+	  boss_lives = 5;
       game_over = false;
       score = 0;
     }
@@ -682,6 +692,10 @@ namespace octet {
 		  boss_exist = true;
 	  }
 
+	  if (boss_lives == 0) {
+		  game_over = true;
+		  sprites[game_over_sprite].translate(-20, 0);
+	  }
 
       char score_text[32];
       sprintf(score_text, "score: %d", score);
