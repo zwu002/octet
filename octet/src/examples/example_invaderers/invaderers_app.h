@@ -33,19 +33,43 @@ namespace octet {
 
 		// true if this sprite is enabled.
 		bool enabled;
+
+		int frame_number, total_frame_x, total_frame_y;
+		float texture_width, texture_height, frame_width, frame_height;
+
+		float frameleft, frameright, frameup, framebottom;
+		float uvs[8];
 	public:
 		sprite() {
 			texture = 0;
 			enabled = true;
 		}
-
-		void init(int _texture, float x, float y, float w, float h) {
+		
+		void calculateframe() {
+			frameleft = (frame_number % total_frame_x) * frame_width;
+			frameright = frameleft + frame_width;
+			frameup = texture_height - ((frame_number / total_frame_x) * frame_height);
+			framebottom = frameup - frame_height;
+			frameleft = frameleft / texture_width;
+			frameright = frameright / texture_width;
+			frameup = frameup / texture_height;
+			framebottom = framebottom / texture_height;
+		}
+		
+		void init(int _texture, float x, float y, float w, float h, int numFrameX, int numFrameY) {
 			modelToWorld.loadIdentity();
 			modelToWorld.translate(x, y, 0);
 			halfWidth = w * 1.0f;
 			halfHeight = h *1.0f;
 			texture = _texture;
 			enabled = true;
+			frame_number = 0;
+			total_frame_x = numFrameX;
+			total_frame_y = numFrameY;
+			texture_width = w;
+			texture_height = h;
+			frame_width = texture_width / total_frame_x;
+			frame_height = texture_height / total_frame_y;
 		}
 
 		void render(texture_shader &shader, mat4t &cameraToWorld) {
@@ -80,13 +104,14 @@ namespace octet {
 			glVertexAttribPointer(attribute_pos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)vertices);
 			glEnableVertexAttribArray(attribute_pos);
 
+			// calculate frame
+			calculateframe();
+
 			// this is an array of the positions of the corners of the texture in 2D
-			static const float uvs[] = {
-				0,  0,
-				1,  0,
-				1,  1,
-				0,  1,
-			};
+			uvs[0] = frameleft; uvs[1] = framebottom;
+			uvs[2] = frameright; uvs[3] = framebottom;
+			uvs[4] = frameright; uvs[5] = frameup;
+			uvs[6] = frameleft; uvs[7] = frameup;
 
 			// attribute_uv is position in the texture of each corner
 			// each corner (vertex) has 2 floats (x, y)
@@ -157,8 +182,7 @@ namespace octet {
 
       // sprite definitions
       ship_sprite = 0,
-      game_over_sprite,
-	  boss_sprite,
+      boss_sprite,
       first_invaderer_sprite,
       last_invaderer_sprite = first_invaderer_sprite + num_invaderers - 1,
 
@@ -175,6 +199,8 @@ namespace octet {
       last_border_sprite = first_border_sprite + num_borders - 1,
 
       num_sprites,
+
+	  game_over_sprite,
 
     };
 
@@ -535,24 +561,24 @@ namespace octet {
 
       font_texture = resource_dict::get_texture_handle(GL_RGBA, "assets/big_0.gif");
 
-      GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship.gif");
-      sprites[ship_sprite].init(ship, 0, -2.75f, 0.5f, 0.5f);
+      GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship_new.gif");
+      sprites[ship_sprite].init(ship, 0, -2.75f, 0.5f, 0.5f, 2, 2);
 
       GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
-      sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f);
+      sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f,1, 1);
 	  
       // set the border to white for clarity
       GLuint white = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
-      sprites[first_border_sprite+0].init(white, 0, -6, 6, 0.2f);
-      sprites[first_border_sprite+1].init(white, 0, 6, 6, 0.2f);
-      sprites[first_border_sprite+2].init(white, -6, 0, 0.2f, 6);
-      sprites[first_border_sprite+3].init(white, 6,  0, 0.2f, 6);
+      sprites[first_border_sprite+0].init(white, 0, -6, 6, 0.2f, 1, 1);
+      sprites[first_border_sprite+1].init(white, 0, 6, 6, 0.2f, 1, 1);
+      sprites[first_border_sprite+2].init(white, -6, 0, 0.2f, 6, 1, 1);
+      sprites[first_border_sprite+3].init(white, 6,  0, 0.2f, 6, 1, 1);
 
       // use the missile texture
       GLuint missile = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/missile.gif");
       for (int i = 0; i != num_missiles; ++i) {
         // create missiles off-screen
-        sprites[first_missile_sprite+i].init(missile, 20, 0, 0.0625f, 0.25f);
+        sprites[first_missile_sprite+i].init(missile, 20, 0, 0.0625f, 0.25f, 1, 1);
         sprites[first_missile_sprite+i].is_enabled() = false;
       }
 
@@ -560,7 +586,7 @@ namespace octet {
       GLuint bomb = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/bomb.gif");
       for (int i = 0; i != num_bombs; ++i) {
         // create bombs off-screen
-        sprites[first_bomb_sprite+i].init(bomb, 20, 0, 0.0625f, 0.25f);
+        sprites[first_bomb_sprite+i].init(bomb, 20, 0, 0.0625f, 0.25f, 1, 1);
         sprites[first_bomb_sprite+i].is_enabled() = false;
       }
 
@@ -568,7 +594,7 @@ namespace octet {
 	  GLuint bossbomb = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/bomb.gif");
 	  for (int i = 0; i != num_bombs; ++i) {
 		  // create bombs off-screen
-		  sprites[first_bossbomb_sprite + i].init(bossbomb, 20, 0, 0.0625f, 0.25f);
+		  sprites[first_bossbomb_sprite + i].init(bossbomb, 20, 0, 0.0625f, 0.25f, 1, 1);
 		  sprites[first_bossbomb_sprite + i].is_enabled() = false;
 	  }
 
@@ -593,7 +619,7 @@ namespace octet {
         boss_shader_.init();
 		GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
 		sprites[boss_sprite].init(
-			  invaderer, 0, 5.0f, 1.5f, 1.5f
+			  invaderer, 0, 5.0f, 1.5f, 1.5f, 1, 1
 		  );
 	}
     // called every frame to move things
@@ -672,14 +698,14 @@ namespace octet {
 			  }
 			  if (boss_exist) {
 				  sprites[first_invaderer_sprite + refresher].init(
-					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 4.0f, 0.5f, 0.5f
+					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 4.0f, 0.5f, 0.5f, 1, 1
 				  );
 				  collider();
 			  }
 			  else
 			  {
 				  sprites[first_invaderer_sprite + refresher].init(
-					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f, 0.5f, 0.5f
+					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f, 0.5f, 0.5f, 1, 1
 				  );
 				  collider();
 			  }
