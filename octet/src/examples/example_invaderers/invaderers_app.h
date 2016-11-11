@@ -39,10 +39,13 @@ namespace octet {
 
 		float frameleft, frameright, frameup, framebottom;
 		float uvs[8];
+
+		int maxframenumber, minframenumber;
 	public:
 		sprite() {
 			texture = 0;
 			enabled = true;
+			minframenumber = 0;
 		}
 		
 		void calculateframe() {
@@ -70,7 +73,24 @@ namespace octet {
 			texture_height = h;
 			frame_width = texture_width / total_frame_x;
 			frame_height = texture_height / total_frame_y;
+			maxframenumber = total_frame_x * total_frame_y;
 		}
+
+		void animate() {
+			frame_number++;
+			if (frame_number == maxframenumber) {
+				frame_number = minframenumber;
+			}
+		}
+
+			void setFrameRange(int minframe, int maxframe) {
+				minframenumber = minframe;
+				maxframenumber = maxframe;
+
+				if (frame_number < minframenumber || frame_number > maxframenumber) {
+					frame_number = minframe;
+				}
+			}
 
 		void render(texture_shader &shader, mat4t &cameraToWorld) {
 			// invisible sprite... used for gameplay.
@@ -112,6 +132,8 @@ namespace octet {
 			uvs[2] = frameright; uvs[3] = framebottom;
 			uvs[4] = frameright; uvs[5] = frameup;
 			uvs[6] = frameleft; uvs[7] = frameup;
+
+			animate();
 
 			// attribute_uv is position in the texture of each corner
 			// each corner (vertex) has 2 floats (x, y)
@@ -272,11 +294,13 @@ namespace octet {
         if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+2])) {
           sprites[ship_sprite].translate(+ship_speed, 0);
         }
+		sprites[ship_sprite].setFrameRange(0, 2);
       } else if (is_key_down(key_right)) {
         sprites[ship_sprite].translate(+ship_speed, 0);
         if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+3])) {
           sprites[ship_sprite].translate(-ship_speed, 0);
         }
+		sprites[ship_sprite].setFrameRange(2, 4);
       }
 	  // up and down arrows
 	  if (is_key_down(key_up)) {
