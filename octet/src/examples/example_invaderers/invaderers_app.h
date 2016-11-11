@@ -34,20 +34,23 @@ namespace octet {
 		// true if this sprite is enabled.
 		bool enabled;
 
+		// animation
+		// this is set to read different part of one gif image to make animation
 		int frame_number, total_frame_x, total_frame_y;
 		float texture_width, texture_height, frame_width, frame_height;
-
 		float frameleft, frameright, frameup, framebottom;
 		float uvs[8];
-
 		int maxframenumber, minframenumber;
+
 	public:
 		sprite() {
 			texture = 0;
 			enabled = true;
+			// set the pointer of the animation
 			minframenumber = 0;
 		}
 		
+		// define four corners of each frame
 		void calculateframe() {
 			frameleft = (frame_number % total_frame_x) * frame_width;
 			frameright = frameleft + frame_width;
@@ -67,15 +70,24 @@ namespace octet {
 			texture = _texture;
 			enabled = true;
 			frame_number = 0;
+			
+			//  read how many frames are there in this image
 			total_frame_x = numFrameX;
 			total_frame_y = numFrameY;
+
+			// define image width and height
 			texture_width = w;
 			texture_height = h;
+			
+			// define frame width and height
 			frame_width = texture_width / total_frame_x;
 			frame_height = texture_height / total_frame_y;
+
+			// define total frame number
 			maxframenumber = total_frame_x * total_frame_y;
 		}
 
+		// move frame from one to another
 		void animate() {
 			frame_number++;
 			if (frame_number == maxframenumber) {
@@ -83,14 +95,15 @@ namespace octet {
 			}
 		}
 
-			void setFrameRange(int minframe, int maxframe) {
-				minframenumber = minframe;
-				maxframenumber = maxframe;
+		// read particular range of frames
+		void setFrameRange(int minframe, int maxframe) {
+			minframenumber = minframe;
+			maxframenumber = maxframe;
 
-				if (frame_number < minframenumber || frame_number > maxframenumber) {
-					frame_number = minframe;
-				}
+			if (frame_number < minframenumber || frame_number > maxframenumber) {
+				frame_number = minframe;
 			}
+		}
 
 		void render(texture_shader &shader, mat4t &cameraToWorld) {
 			// invisible sprite... used for gameplay.
@@ -128,11 +141,13 @@ namespace octet {
 			calculateframe();
 
 			// this is an array of the positions of the corners of the texture in 2D
+			// setting four vertices of the UV
 			uvs[0] = frameleft; uvs[1] = framebottom;
 			uvs[2] = frameright; uvs[3] = framebottom;
 			uvs[4] = frameright; uvs[5] = frameup;
 			uvs[6] = frameleft; uvs[7] = frameup;
 
+			// go through each frame
 			animate();
 
 			// attribute_uv is position in the texture of each corner
@@ -208,6 +223,8 @@ namespace octet {
       first_invaderer_sprite,
       last_invaderer_sprite = first_invaderer_sprite + num_invaderers - 1,
 
+	  game_over_sprite,
+
       first_missile_sprite,
       last_missile_sprite = first_missile_sprite + num_missiles - 1,
 
@@ -221,8 +238,6 @@ namespace octet {
       last_border_sprite = first_border_sprite + num_borders - 1,
 
       num_sprites,
-
-	  game_over_sprite,
 
     };
 
@@ -285,6 +300,12 @@ namespace octet {
       }
     }
 
+	void boss_die() {
+		if (boss_lives == 0) {
+			game_over = true;
+			sprites[game_over_sprite].translate(-20, 0);
+		}
+	}
     // use the keyboard to move the ship
     void move_ship() {
       const float ship_speed = 0.2f;
@@ -294,12 +315,14 @@ namespace octet {
         if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+2])) {
           sprites[ship_sprite].translate(+ship_speed, 0);
         }
+		// set a different animation for moving left
 		sprites[ship_sprite].setFrameRange(0, 2);
       } else if (is_key_down(key_right)) {
         sprites[ship_sprite].translate(+ship_speed, 0);
         if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+3])) {
           sprites[ship_sprite].translate(-ship_speed, 0);
         }
+		// set a different animation for moving right
 		sprites[ship_sprite].setFrameRange(2, 4);
       }
 	  // up and down arrows
@@ -589,7 +612,7 @@ namespace octet {
       sprites[ship_sprite].init(ship, 0, -2.75f, 0.5f, 0.5f, 2, 2);
 
       GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
-      sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f,1, 1);
+      sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.0f ,1, 1);
 	  
       // set the border to white for clarity
       GLuint white = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
@@ -632,9 +655,9 @@ namespace octet {
       missiles_disabled = 0;
       bombs_disabled = 50;
       invader_velocity = -0.2f;
-	  boss_velocity = -0.3f;
+	  boss_velocity = -0.2f;
       num_lives = 1;
-	  boss_lives = 5;
+	  boss_lives = 8;
       game_over = false;
       score = 0;
     }
@@ -643,7 +666,7 @@ namespace octet {
         boss_shader_.init();
 		GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
 		sprites[boss_sprite].init(
-			  invaderer, 0, 5.0f, 1.5f, 1.5f, 1, 1
+			  invaderer, 0, 5.0f, 1.0f, 1.0f, 1, 1
 		  );
 	}
     // called every frame to move things
@@ -673,6 +696,8 @@ namespace octet {
 	  collider();
 
 	  invaders_collide();
+
+	  boss_die();
 
       move_invaders(0, invader_velocity);
 
@@ -707,7 +732,7 @@ namespace octet {
 
 	  // time simulation
 	  int frame = get_frame_number();
-	  if (game_over) { frame = 0; }
+	  if (game_over) { frame = 3; }
 	  if (frame % 30 == 1) {
 		  timer++;
 	  }
@@ -737,14 +762,9 @@ namespace octet {
       }
 
 	  // draw boss invaders
-	  if (frame % 150 == 149 && !boss_exist) {
+	  if (frame % 300 == 299 && !boss_exist) {
 		  boss_init();
 		  boss_exist = true;
-	  }
-
-	  if (boss_lives == 0) {
-		  game_over = true;
-		  sprites[game_over_sprite].translate(-20, 0);
 	  }
 
       char score_text[32];
