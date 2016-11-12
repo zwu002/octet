@@ -16,6 +16,9 @@
 //   Texture loaded from GIF file
 //   Audio
 //
+#include <iostream>
+#include <fstream>
+#include <vector>
 
 namespace octet {
 	class sprite {
@@ -317,6 +320,7 @@ namespace octet {
 			sprites[game_over_sprite].translate(-20, 0);
 		}
 	}
+
     // use the keyboard to move the ship
     void move_ship() {
       const float ship_speed = 0.2f;
