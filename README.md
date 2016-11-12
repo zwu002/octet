@@ -3,6 +3,7 @@
 # Introduction
 
 Invader Reversed is a retro roguelike game modified from original 'Space Invader' game by Andy Thomason.
+
 It contains an invader (main character), enemy ships which keep refreshing from top to bottom and a boss. Player needs to control the invader to kill enemy ships by firing missiles. Any collision to enemies or hitting by bombs will be considered as a game over.
 Player should kill the boss to win the game.
 
@@ -18,12 +19,14 @@ This is part of the early amendments in the codes. It includes enlarging the out
 There are two types of enemies: enemy ships and boss ships.
 
 The enemy ships are modified from the original enemy invaders. Firstly, the developer changed the movement from horizontal to vertical. It is intended to generate the feeling that enemies keep refreshing and rush to the player.
+
 A collider is created for enemy ships so that collision between the player and enemy will cause a game over. It increases the difficulty because the player has to dodge both bombs and enemies.
 
 The boss moves horizontally on the top of the screen and it shoots similar to enemy ships. However, it has 5 lives so that the player has to hit it 5 times to win the game. Some new sprites are created for the boss and boss's bombs. New functions are created such as hitting the boss and monitoring boss's lives.
 
 # Time Simulation
 Time simulation is essential for the game because refreshing invaders and generating boss are depending on time (actually is game frames).
+
 It is simulated by recording frames of the game, using get_frame_number(). The texts on the top left are also modified to score and time.
 
 # Restart Game
@@ -53,13 +56,20 @@ The bug is fixed via different methods. First, pre-drawn enemies should stay awa
 
 # Game Display and Overlapping
 There were many bugs in the game display, especially overlapping images and wrong collision. Most of these bugs were fixed during adding new functions. During final adjustments, it is noticed that some bugs were caused by enlarging the screen in the beginning. Some of the images were stretched so it looked rough and collide incorrectly.
+
 Extra care was taken while importing new artwork to the game in order to adjust the collider and achieve better image quality.
 
 # Credits
 Orinial game: Space Invader, developed by Andy Thomason
+
 Modified by Zhouyu Wu
+
 Visual artwork by Zhouyu Wu
+
 Sound sources: http://soundbible.com/
+
 Special thanks to
+
 Andy Thomason: setting time simulation, getting game frames
+
 Abdullah Bin Abdullah: creating animation, changing uv settings
