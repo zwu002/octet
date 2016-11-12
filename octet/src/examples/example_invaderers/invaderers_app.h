@@ -39,6 +39,7 @@ namespace octet {
 
 		// animation
 		// this is set to read different part of one gif image to make animation
+		// contributed by Msc student Abdullah Bin Abdullah
 		int frame_number, total_frame_x, total_frame_y;
 		float texture_width, texture_height, frame_width, frame_height;
 		float frameleft, frameright, frameup, framebottom;
