@@ -41,6 +41,7 @@ namespace octet {
 		float frameleft, frameright, frameup, framebottom;
 		float uvs[8];
 		int maxframenumber, minframenumber;
+		int speedcontrol, speed;
 
 	public:
 		sprite() {
@@ -62,7 +63,7 @@ namespace octet {
 			framebottom = framebottom / texture_height;
 		}
 		
-		void init(int _texture, float x, float y, float w, float h, int numFrameX, int numFrameY) {
+		void init(int _texture, float x, float y, float w, float h, int numFrameX, int numFrameY, int anispeed) {
 			modelToWorld.loadIdentity();
 			modelToWorld.translate(x, y, 0);
 			halfWidth = w * 1.0f;
@@ -85,13 +86,23 @@ namespace octet {
 
 			// define total frame number
 			maxframenumber = total_frame_x * total_frame_y;
+
+			// define speedcontrol of animation
+			speed = anispeed;
+			speedcontrol = anispeed;
 		}
 
 		// move frame from one to another
 		void animate() {
-			frame_number++;
-			if (frame_number == maxframenumber) {
-				frame_number = minframenumber;
+			if (speedcontrol) {
+				speedcontrol--;
+			}
+			else {
+				frame_number++;
+				if (frame_number == maxframenumber) {
+					  frame_number = minframenumber;
+				  }
+				  speedcontrol = speed;
 			}
 		}
 
@@ -205,7 +216,6 @@ namespace octet {
 
     // shader to draw a textured triangle
     texture_shader texture_shader_;
-	boss_shader boss_shader_;
 
     enum {
       num_sound_sources = 8,
@@ -254,6 +264,7 @@ namespace octet {
     int score;
 	int timer=0;
 	int refresher = 0;
+	int tempframe = 0;
 	bool boss_exist = false;
 
     // speed of enemy
@@ -316,14 +327,14 @@ namespace octet {
           sprites[ship_sprite].translate(+ship_speed, 0);
         }
 		// set a different animation for moving left
-		sprites[ship_sprite].setFrameRange(0, 2);
+		sprites[ship_sprite].setFrameRange(2, 4);
       } else if (is_key_down(key_right)) {
         sprites[ship_sprite].translate(+ship_speed, 0);
         if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+3])) {
           sprites[ship_sprite].translate(-ship_speed, 0);
         }
 		// set a different animation for moving right
-		sprites[ship_sprite].setFrameRange(2, 4);
+		sprites[ship_sprite].setFrameRange(0, 2);
       }
 	  // up and down arrows
 	  if (is_key_down(key_up)) {
@@ -331,12 +342,16 @@ namespace octet {
 		  if (sprites[ship_sprite].collides_with(sprites[first_border_sprite + 1])) {
 			  sprites[ship_sprite].translate(0, -ship_speed);
 		  }
+		  // set a different animation for moving up
+		  sprites[ship_sprite].setFrameRange(6, 8);
 	  }
 	  else if (is_key_down(key_down)) {
 		  sprites[ship_sprite].translate(0, -ship_speed);
 		  if (sprites[ship_sprite].collides_with(sprites[first_border_sprite + 0])) {
 			  sprites[ship_sprite].translate(0, +ship_speed);
 		  }
+		  // set a different animation for moving down
+		  sprites[ship_sprite].setFrameRange(4, 6);
 	  }
     }
 
@@ -508,9 +523,9 @@ namespace octet {
 
 	// move the array of boss
 	void move_boss(float dx, float dy) {
-		sprite &invaderer = sprites[boss_sprite];
-			if (invaderer.is_enabled()) {
-				invaderer.translate(dx, dy);
+		sprite &boss = sprites[boss_sprite];
+			if (boss_exist) {
+				boss.translate(dx, dy);
 			}
 	}
 
@@ -540,10 +555,13 @@ namespace octet {
 		if (sprites[boss_sprite].collides_with(sprites[first_border_sprite + 2])) {
 			boss_velocity = -boss_velocity;
 			move_boss(boss_velocity, 0);
+			sprites[boss_sprite].setFrameRange(0, 4);
 		}
 		if (sprites[boss_sprite].collides_with(sprites[first_border_sprite + 3])) {
 			boss_velocity = -boss_velocity;
 			move_boss(boss_velocity, 0);
+			// set a different animation for moving left
+			sprites[boss_sprite].setFrameRange(5, 8);
 		}
 	}
 
@@ -608,24 +626,24 @@ namespace octet {
 
       font_texture = resource_dict::get_texture_handle(GL_RGBA, "assets/big_0.gif");
 
-      GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship_new.gif");
-      sprites[ship_sprite].init(ship, 0, -2.75f, 0.5f, 0.5f, 2, 2);
+      GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship.gif");
+      sprites[ship_sprite].init(ship, 0, -2.75f, 0.5f, 0.5f, 2, 4, 8);
 
       GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
-      sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.0f ,1, 1);
+      sprites[game_over_sprite].init(GameOver, 20, 0, 1.5f, 0.3f ,1, 1, 1);
 	  
       // set the border to white for clarity
       GLuint white = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
-      sprites[first_border_sprite+0].init(white, 0, -6, 6, 0.2f, 1, 1);
-      sprites[first_border_sprite+1].init(white, 0, 6, 6, 0.2f, 1, 1);
-      sprites[first_border_sprite+2].init(white, -6, 0, 0.2f, 6, 1, 1);
-      sprites[first_border_sprite+3].init(white, 6,  0, 0.2f, 6, 1, 1);
-
+      sprites[first_border_sprite+0].init(white, 0, -6, 6, 0.2f, 1, 1, 15);
+      sprites[first_border_sprite+1].init(white, 0, 6, 6, 0.2f, 1, 1, 15);
+      sprites[first_border_sprite+2].init(white, -6, 0, 0.2f, 6, 1, 1, 15);
+      sprites[first_border_sprite+3].init(white, 6,  0, 0.2f, 6, 1, 1, 15);
+	
       // use the missile texture
       GLuint missile = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/missile.gif");
       for (int i = 0; i != num_missiles; ++i) {
         // create missiles off-screen
-        sprites[first_missile_sprite+i].init(missile, 20, 0, 0.0625f, 0.25f, 1, 1);
+        sprites[first_missile_sprite+i].init(missile, 20, 0, 0.0625f, 0.25f, 1, 1, 15);
         sprites[first_missile_sprite+i].is_enabled() = false;
       }
 
@@ -633,7 +651,7 @@ namespace octet {
       GLuint bomb = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/bomb.gif");
       for (int i = 0; i != num_bombs; ++i) {
         // create bombs off-screen
-        sprites[first_bomb_sprite+i].init(bomb, 20, 0, 0.0625f, 0.25f, 1, 1);
+        sprites[first_bomb_sprite+i].init(bomb, 20, 0, 0.0625f, 0.25f, 1, 1, 15);
         sprites[first_bomb_sprite+i].is_enabled() = false;
       }
 
@@ -641,9 +659,22 @@ namespace octet {
 	  GLuint bossbomb = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/bomb.gif");
 	  for (int i = 0; i != num_bombs; ++i) {
 		  // create bombs off-screen
-		  sprites[first_bossbomb_sprite + i].init(bossbomb, 20, 0, 0.0625f, 0.25f, 1, 1);
+		  sprites[first_bossbomb_sprite + i].init(bossbomb, 20, 0, 0.0625f, 0.25f, 1, 1, 15);
 		  sprites[first_bossbomb_sprite + i].is_enabled() = false;
 	  }
+
+	  // delete invader sprites
+	  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
+	  for (int j = 0; j != num_invaderers; ++j) {
+		  sprites[first_invaderer_sprite + j].init(invaderer, 20, 0, 0.5f, 0.5f, 4, 1, 5);
+		  sprites[first_invaderer_sprite + j].is_enabled() = false;
+	  }
+
+	  // use the boss texture
+		  GLuint boss = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/boss.gif");
+		  sprites[boss_sprite].init(
+			  boss, 20, 5, 0.5f, 0.5f, 4, 2, 15
+		  );
 
       // sounds
       whoosh = resource_dict::get_sound_handle(AL_FORMAT_MONO16, "assets/invaderers/whoosh.wav");
@@ -657,18 +688,14 @@ namespace octet {
       invader_velocity = -0.2f;
 	  boss_velocity = -0.2f;
       num_lives = 1;
-	  boss_lives = 8;
+	  boss_lives = 5;
       game_over = false;
+	  boss_exist = false;
+	  timer = 0;
       score = 0;
+	  refresher = 0;
     }
 
-	void boss_init() {
-        boss_shader_.init();
-		GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
-		sprites[boss_sprite].init(
-			  invaderer, 0, 5.0f, 1.0f, 1.0f, 1, 1
-		  );
-	}
     // called every frame to move things
     void simulate() {
       if (game_over) {
@@ -708,7 +735,8 @@ namespace octet {
     }
 
     // this is called to draw the world
-    void draw_world(int x, int y, int w, int h) {
+    void draw_world(int x, int y, int w, int h) { 
+
       simulate();
 
       // set a viewport - includes whole window area
@@ -732,13 +760,13 @@ namespace octet {
 
 	  // time simulation
 	  int frame = get_frame_number();
-	  if (game_over) { frame = 3; }
-	  if (frame % 30 == 1) {
+	  if (game_over) { frame = 0; }
+	  if ((frame - tempframe) % 30 == 1) {
 		  timer++;
 	  }
 
 	  // refresh invaders
-	  if (frame % 60 == 2) {
+	  if ((frame - tempframe) % 60 == 2) {
 		  GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
 		  for (int j = 0; j != num_first; ++j) {
 			  refresher++;
@@ -747,14 +775,14 @@ namespace octet {
 			  }
 			  if (boss_exist) {
 				  sprites[first_invaderer_sprite + refresher].init(
-					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 4.0f, 0.5f, 0.5f, 1, 1
+					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 4.0f, 0.5f, 0.5f, 4, 1, 5
 				  );
 				  collider();
 			  }
 			  else
 			  {
 				  sprites[first_invaderer_sprite + refresher].init(
-					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f, 0.5f, 0.5f, 1, 1
+					  invaderer, (float)randomizer.get(-4.0f, 4.0f), 6.0f, 0.5f, 0.5f, 4, 1, 5
 				  );
 				  collider();
 			  }
@@ -762,11 +790,15 @@ namespace octet {
       }
 
 	  // draw boss invaders
-	  if (frame % 300 == 299 && !boss_exist) {
-		  boss_init();
+	  if ((frame - tempframe) % 300 == 299 && !boss_exist) {
+		  sprites[boss_sprite].translate(-20, 0);
 		  boss_exist = true;
 	  }
 
+	  if (is_key_down(key_f1)) {
+		  tempframe = frame;
+		  app_init();
+	  }
       char score_text[32];
       sprintf(score_text, "score: %d", score);
       draw_text(texture_shader_, -1.75f, 2, 1.0f/256, score_text);
@@ -774,7 +806,6 @@ namespace octet {
 	  char timer_text[32];
 	  sprintf(timer_text, "time: %d", timer);
 	  draw_text(texture_shader_, -1.75f, 1.8f, 1.0f/256, timer_text);
-
 
       // move the listener with the camera
       vec4 &cpos = cameraToWorld.w();
